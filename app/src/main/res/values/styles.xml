@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BKHPhim</string>
+    <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#06070D</item>
+        <item name="android:statusBarColor">#06070D</item>
+        <item name="android:navigationBarColor">#06070D</item>
+    </style>
+</resources>

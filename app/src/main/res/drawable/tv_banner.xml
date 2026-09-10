@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Banner Android TV (bắt buộc 320x180) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#06070D" android:pathData="M0,0h320v180h-320z"/>
+    <path android:fillColor="#8B5CF6" android:pathData="M24,40a50,50 0 1,0 0.001,0z"/>
+    <path android:fillColor="#EC4899" android:pathData="M74,40a50,50 0 0,1 -50,50v-50z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M42,22l28,18l-28,18z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M96,32h180v16h-180z"/>
+    <path android:fillColor="#C084FC" android:pathData="M96,56h120v8h-120z"/>
+</vector>

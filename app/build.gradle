@@ -1,0 +1,33 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.bkhphim.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.bkhphim.app"
+        minSdk 21          // Android 5.0+ — hỗ trợ hầu hết TV Box & tivi Xiaomi
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // APK debug-sign để cài trực tiếp không cần tạo keystore
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+// Không dùng thư viện ngoài nào — WebView thuần của Android
+dependencies {
+}
