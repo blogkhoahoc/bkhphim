@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch: {}
 
+permissions:
+  contents: write   # cần để tạo Release
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,3 +35,13 @@ jobs:
           name: BKHPhim-APK
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      - name: Đính kèm APK vào Release (lưu vĩnh viễn)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: BKHPhim APK ${{ github.run_number }}
+          body: |
+            File APK cài trực tiếp cho điện thoại và Android TV.
+            Tải file app-debug.apk bên dưới.
+          files: app/build/outputs/apk/debug/*.apk
