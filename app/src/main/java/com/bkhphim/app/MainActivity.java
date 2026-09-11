@@ -28,6 +28,10 @@ public class MainActivity extends Activity {
     private volatile boolean playerOpen = false;
     // thanh điều khiển video hệ thống (MediaController) đang hiển thị hay không
     private boolean mediaControllerVisible = false;
+    // chống lặp khi giữ phím ◀ ▶ để đổi tập
+    private boolean episodeGestureDone = false;
+    // chống lặp khi giữ phím ▲ để bật/tắt toàn màn hình
+    private boolean upGestureDone = false;
 
     // Fullscreen video (custom view) state
     private View customView;
@@ -82,6 +86,36 @@ public class MainActivity extends Activity {
         public void setPlayerOpen(boolean open) {
             playerOpen = open;
         }
+
+        /** Chạm vào giữa vùng video — để iframe nhúng chiếm keyboard focus */
+        @JavascriptInterface
+        public void tapVideo() {
+            runOnUiThread(() -> {
+                mediaControllerVisible = false;
+                tapCenter();
+            });
+        }
+
+        /**
+         * Bơm một phím thật vào WebView. Khi iframe (player nhúng) đang giữ
+         * focus, phím sẽ tới trực tiếp player: Space = phát/dừng,
+         * ArrowLeft/Right = tua — các player web đều hỗ trợ sẵn.
+         */
+        @JavascriptInterface
+        public void sendKey(final String code) {
+            runOnUiThread(() -> {
+                int kc;
+                if (" ".equals(code)) kc = KeyEvent.KEYCODE_SPACE;
+                else if ("ArrowLeft".equals(code)) kc = KeyEvent.KEYCODE_DPAD_LEFT;
+                else if ("ArrowRight".equals(code)) kc = KeyEvent.KEYCODE_DPAD_RIGHT;
+                else if ("ArrowUp".equals(code)) kc = KeyEvent.KEYCODE_DPAD_UP;
+                else if ("ArrowDown".equals(code)) kc = KeyEvent.KEYCODE_DPAD_DOWN;
+                else return;
+                long now = SystemClock.uptimeMillis();
+                webView.dispatchKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, kc, 0));
+                webView.dispatchKeyEvent(new KeyEvent(now, now + 40, KeyEvent.ACTION_UP, kc, 0));
+            });
+        }
     }
 
     /**
@@ -111,24 +145,41 @@ public class MainActivity extends Activity {
                 }
                 return super.dispatchKeyEvent(event);
             }
-            if (event.getRepeatCount() == 0) {
+            if (event.getRepeatCount() == 0 || event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT
+                    || event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT) {
                 switch (event.getKeyCode()) {
                     case KeyEvent.KEYCODE_DPAD_CENTER:
                     case KeyEvent.KEYCODE_ENTER:
                     case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
                     case KeyEvent.KEYCODE_MEDIA_PLAY:
                     case KeyEvent.KEYCODE_MEDIA_PAUSE:
-                        tapCenter();
+                        if (event.getRepeatCount() == 0) {
+                            // OK = chạm video + gửi phím Space -> player nhúng tự phát/dừng
+                            jsKey("ok");
+                        }
                         return true;
                     case KeyEvent.KEYCODE_DPAD_UP:
-                        jsKey("up");
+                        if (event.getRepeatCount() == 0) {
+                            upGestureDone = false;
+                            jsKey("up");
+                        } else if (!upGestureDone && event.getRepeatCount() >= 2) {
+                            upGestureDone = true;
+                            jsKey("fs"); // giữ ▲ ~0.7s = bật/tắt toàn màn hình
+                        }
+                        return true;
+                    case KeyEvent.KEYCODE_DPAD_DOWN:
+                        if (event.getRepeatCount() == 0) jsKey("down");
                         return true;
                     case KeyEvent.KEYCODE_DPAD_LEFT:
-                        jsKey("left");
-                        return true;
                     case KeyEvent.KEYCODE_DPAD_RIGHT:
-                        jsKey("right");
-                        return true;
+                        if (event.getRepeatCount() == 0) {
+                            episodeGestureDone = false;
+                            forwardKeyToWebView(event.getKeyCode());   // 1 nhát = tua video
+                        } else if (!episodeGestureDone && event.getRepeatCount() >= 2) {
+                            episodeGestureDone = true;                  // giữ ~0.7s = đổi tập
+                            jsKey(event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT ? "epprev" : "epnext");
+                        }
+                        return true; // nuốt repeat trung gian để không tua 2 lần
                 }
             }
         }
@@ -181,6 +232,13 @@ public class MainActivity extends Activity {
 
     private void jsKey(String key) {
         webView.evaluateJavascript("window.tvKey && window.tvKey('" + key + "')", null);
+    }
+
+    /** Đưa phím mũi tên thật vào WebView — player nhúng đang giữ focus sẽ tự tua */
+    private void forwardKeyToWebView(int code) {
+        long now = SystemClock.uptimeMillis();
+        webView.dispatchKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, code, 0));
+        webView.dispatchKeyEvent(new KeyEvent(now, now + 40, KeyEvent.ACTION_UP, code, 0));
     }
 
     /** Giả lập cú chạm giữa màn hình — chủ yếu để phát/dừng video trong iframe */

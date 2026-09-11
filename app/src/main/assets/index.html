@@ -238,7 +238,7 @@
     </button>
     <div class="mt-auto px-2 text-xs text-slate-500 leading-relaxed tv-only">
       <p class="flex items-center gap-2 mb-1"><i class="fa-solid fa-circle-info text-brand-500"></i> Dùng remote để điều hướng</p>
-      <p class="pl-6">Khi xem phim: OK phát/dừng · ▲ toàn màn hình · ◀ ▶ đổi tập</p>
+      <p class="pl-6">Khi xem phim: OK phát/dừng · ◀ ▶ tua · giữ ◀ ▶ đổi tập</p>
     </div>
   </nav>
 
@@ -478,7 +478,7 @@
           <h3 id="playerTitle" class="text-white font-bold text-sm sm:text-base truncate">Tên phim</h3>
           <p id="playerEpName" class="text-slate-400 text-xs truncate">Tập 1</p>
         </div>
-        <span class="tv-only text-[11px] text-slate-500 shrink-0 hidden lg:inline">OK phát/dừng · ▲ toàn màn hình · ◀ ▶ đổi tập · Back thoát</span>
+        <span class="tv-only text-[11px] text-slate-500 shrink-0 hidden lg:inline">OK phát/dừng · ◀ ▶ tua · giữ ◀ ▶ đổi tập · ▼ chọn nút · giữ ▲ phóng to · Back thoát</span>
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <button onclick="requestPlayerFullscreen()" title="Toàn màn hình" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10">
@@ -577,10 +577,33 @@
         'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex="0"]'
       )).filter(isFocusable);
     }
-    function focusFirst() {
-      if (!playerModalEl.classList.contains('hidden')) return; // trong trình phát: điều khiển bằng phím tắt
+    function focusFirst(force) {
+      if (!force && !playerModalEl.classList.contains('hidden')) return; // trong trình phát: điều khiển bằng phím tắt
       const first = queryFocusables(activeScope())[0];
       if (first) { first.focus({ preventScroll: true }); first.scrollIntoView({ block: 'center' }); }
+    }
+    // Tìm phần tử gần nhất theo hướng (ddx, ddy) trong phạm vi scope
+    function spatialBest(scope, active, ddx, ddy) {
+      const r = active.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      let best = null, bestScore = Infinity;
+      queryFocusables(scope).forEach(el => {
+        if (el === active) return;
+        const b = el.getBoundingClientRect();
+        if (b.width === 0 || b.height === 0) return;
+        const dx = (b.left + b.width / 2) - cx;
+        const dy = (b.top + b.height / 2) - cy;
+        const primary = dx * ddx + dy * ddy;
+        if (primary <= 4) return;
+        const perp = Math.abs(dx * ddy - dy * ddx);
+        const score = primary + perp * 2.5; // phạt lệch hướng tuyến tính — không nhảy xa oan
+        if (score < bestScore) { bestScore = score; best = el; }
+      });
+      return best;
+    }
+    function spatialFocus(best) {
+      if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+      return !!best;
     }
     const DPAD_DIRS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
     document.addEventListener('keydown', e => {
@@ -594,25 +617,8 @@
       e.preventDefault(); // chặn cuộn/trỏ gốc của trang — nguyên nhân gây "nhảy kép"
       if (!isFocusable(active)) { focusFirst(); return; }
       const [ddx, ddy] = DPAD_DIRS[e.key];
-      const r = active.getBoundingClientRect();
-      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      let best = null, bestScore = Infinity;
-      queryFocusables(activeScope()).forEach(el => {
-        if (el === active) return;
-        const b = el.getBoundingClientRect();
-        if (b.width === 0 || b.height === 0) return;
-        const dx = (b.left + b.width / 2) - cx;
-        const dy = (b.top + b.height / 2) - cy;
-        const primary = dx * ddx + dy * ddy;
-        if (primary <= 4) return;
-        const perp = Math.abs(dx * ddy - dy * ddx);
-        const score = primary + perp * 2.5; // phạt lệch hướng tuyến tính — không nhảy xa oan
-        if (score < bestScore) { bestScore = score; best = el; }
-      });
-      if (best) {
-        best.focus({ preventScroll: true });
-        best.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-      } else if (!playerOpen) {
+      const best = spatialBest(activeScope(), active, ddx, ddy);
+      if (!spatialFocus(best) && !playerOpen) {
         // Không có phần tử nào theo hướng đó → cuộn trang
         const sc = document.scrollingElement;
         if (e.key === 'ArrowDown') sc.scrollBy({ top: 260 });
@@ -988,7 +994,29 @@
       } catch (err) { /* một số nguồn nhúng chặn fullscreen từ trang gốc */ }
     }
     // Điều khiển từ remote trên TV: MainActivity chặn phím (vì iframe nuốt phím)
-    // rồi gọi lại vào đây. ◀ ▶ đổi tập, ▲ bật/tắt toàn màn hình.
+    // rồi gọi lại vào đây. Cơ chế: khi đã chạm vào video, iframe (player nhúng)
+    // giữ keyboard focus -> bơm phím thật (Space / ← →) vào là player nhúng tự
+    // phát/dừng và tự tua, đúng chuẩn các trình phát web.
+    let tvIframeFocused = false; // iframe nhúng có đang giữ keyboard focus không
+    let tvControlsMode = false;  // false = đang ở chế độ video; true = đang chọn nút của app
+    function tvFocusOurPage() {
+      tvIframeFocused = false;
+      try {
+        if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        document.body.focus();
+      } catch (e) {}
+    }
+    function tvSendSeek(code) {
+      if (!window.TvBridge) return;
+      if (!tvIframeFocused) { TvBridge.tapVideo(); tvIframeFocused = true; } // chạm video trước để iframe nhận phím
+      else TvBridge.sendKey(code); // phím thật -> player nhúng tự tua
+    }
+    function tvTogglePlay() {
+      if (!window.TvBridge) return;
+      // chạm video (đảm bảo iframe focus) + gửi Space -> player nhúng tự phát/dừng
+      TvBridge.tapVideo();
+      setTimeout(() => TvBridge.sendKey(' '), 150);
+    }
     function toggleTvFullscreen() {
       const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
       if (fsEl) {
@@ -999,9 +1027,46 @@
       }
     }
     window.tvKey = function (k) {
-      if (k === 'left') prevEpisode();
-      else if (k === 'right') nextEpisode();
-      else if (k === 'up') toggleTvFullscreen();
+      if (!window.TvBridge) return;
+      const active = document.activeElement;
+      if (k === 'ok') {
+        if (tvControlsMode && active && playerModalEl.contains(active) && active.tagName === 'BUTTON') {
+          active.click(); // bấm nút của app đang chọn (đổi tập, fullscreen, đóng...)
+        } else {
+          tvTogglePlay();
+        }
+      } else if (k === 'left') {
+        tvSendSeek('ArrowLeft');
+      } else if (k === 'right') {
+        tvSendSeek('ArrowRight');
+      } else if (k === 'up') {
+        if (tvControlsMode) {
+          if (isFocusable(active)) spatialFocus(spatialBest(playerModalEl, active, 0, -1));
+          else focusFirst(true);
+        } else {
+          tvFocusOurPage();
+          toggleTvFullscreen(); // ở chế độ video: ▲ = thu nhỏ/phóng to
+        }
+      } else if (k === 'down') {
+        if (tvControlsMode) {
+          if (isFocusable(active)) spatialFocus(spatialBest(playerModalEl, active, 0, 1));
+          else focusFirst(true);
+        } else {
+          // từ chế độ video bấm ▼ để chuyển sang chọn các nút của app
+          tvControlsMode = true;
+          tvFocusOurPage();
+          focusFirst(true);
+        }
+      } else if (k === 'fs') {
+        tvFocusOurPage();
+        toggleTvFullscreen();
+      } else if (k === 'epprev') {
+        tvFocusOurPage();
+        prevEpisode();
+      } else if (k === 'epnext') {
+        tvFocusOurPage();
+        nextEpisode();
+      }
     };
     // Phím Back trên TV: Android gọi hàm này trước khi thoát app.
     // Trả về true = đã xử lý (đóng lớp nào đó); false = đang ở trang chủ -> thoát app.
@@ -1023,6 +1088,8 @@
       document.body.style.overflow = 'hidden';
       updatePlayerNav();
       updatePlayerFavIcon();
+      tvIframeFocused = false; // iframe mới, phải chạm lần đầu mới nhận phím
+      tvControlsMode = false;  // bắt đầu ở chế độ video
       // Báo Android: đang ở màn trình phát -> Activity sẽ chặn & xử lý phím remote
       if (window.TvBridge) { try { TvBridge.setPlayerOpen(IS_TV); } catch (e) {} }
       if (IS_TV) setTimeout(requestPlayerFullscreen, 200); // TV: tự vào toàn màn hình ngay
@@ -1195,7 +1262,9 @@
         document.getElementById('searchInput').focus();
       }
       if ((e.key === 'r' || e.key === 'R') && document.activeElement.tagName !== 'INPUT') triggerRandomMovie();
-      if (!document.getElementById('playerModal').classList.contains('hidden')) {
+      // Trên TV: ◀ ▶ được Java chuyển thẳng vào player nhúng để tua video
+      // (giữ ◀ ▶ mới đổi tập), nên không gán đổi tập ở đây
+      if (!IS_TV && !document.getElementById('playerModal').classList.contains('hidden')) {
         if (e.key === 'ArrowLeft') { e.preventDefault(); prevEpisode(); }
         if (e.key === 'ArrowRight') { e.preventDefault(); nextEpisode(); }
       }
