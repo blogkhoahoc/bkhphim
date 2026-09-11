@@ -116,17 +116,8 @@ public class MainActivity extends Activity {
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (playerOpen) {
             boolean nativeVideoFs = customView != null && isNativeVideoFullscreen(customView);
-            if (nativeVideoFs && event.getAction() == KeyEvent.ACTION_DOWN) {
-                if ((event.getKeyCode() == KeyEvent.KEYCODE_DPAD_CENTER
-                        || event.getKeyCode() == KeyEvent.KEYCODE_ENTER)
-                        && event.getRepeatCount() == 0) {
-                    toggleNativeVideoPlayPause();
-                    return true;
-                }
-                return super.dispatchKeyEvent(event);
-            }
 
-            // Xử lý phím OK/Enter (Phân biệt bấm nhả nhanh và bấm giữ)
+            // 1. Phím OK / Enter cho CẢ 2 chế độ (Nhả để Tạm dừng, Giữ để Xóa QC)
             if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_CENTER || 
                 event.getKeyCode() == KeyEvent.KEYCODE_ENTER || 
                 event.getKeyCode() == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
@@ -137,16 +128,18 @@ public class MainActivity extends Activity {
                         okPressTime = SystemClock.uptimeMillis();
                         okLongPressExecuted = false;
                     } else if (isOkPressed && !okLongPressExecuted) {
-                        // Bấm giữ 0.6s -> Tự động click quảng cáo
                         if (SystemClock.uptimeMillis() - okPressTime > 600) { 
                             okLongPressExecuted = true;
                             autoClickAds(); 
                         }
                     }
                 } else if (event.getAction() == KeyEvent.ACTION_UP) {
-                    // Nhả phím nhanh -> Thực hiện Play/Pause
                     if (isOkPressed && !okLongPressExecuted) {
-                        jsKey("ok"); 
+                        if (nativeVideoFs) {
+                            toggleNativeVideoPlayPause();
+                        } else {
+                            jsKey("ok"); 
+                        }
                     }
                     isOkPressed = false;
                     okLongPressExecuted = false;
@@ -154,12 +147,12 @@ public class MainActivity extends Activity {
                 return true;
             }
 
-            // Xử lý các phím điều hướng (Tua, Đổi màn hình)
+            // 2. Các phím điều hướng (Tua, Đổi màn hình)
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
                 switch (event.getKeyCode()) {
                     case KeyEvent.KEYCODE_DPAD_UP:
                         if (event.getRepeatCount() == 0) {
-                            jsKey("up"); // Phục hồi thao tác Bật/Tắt Toàn màn hình bằng phím Lên
+                            jsKey("up");
                         }
                         return true;
                     case KeyEvent.KEYCODE_DPAD_DOWN:
@@ -169,14 +162,19 @@ public class MainActivity extends Activity {
                         return true;
                     case KeyEvent.KEYCODE_DPAD_LEFT:
                     case KeyEvent.KEYCODE_DPAD_RIGHT:
-                        if (event.getRepeatCount() == 0) {
-                            episodeGestureDone = false;
-                            forwardKeyToWebView(event.getKeyCode()); // Tua
-                        } else if (!episodeGestureDone && event.getRepeatCount() >= 2) {
-                            episodeGestureDone = true;
-                            jsKey(event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT ? "epprev" : "epnext");
+                        if (nativeVideoFs) {
+                            // Bàn giao hoàn toàn Tua Trái/Phải cho Android Native MediaController ở chế độ Fullscreen
+                            return super.dispatchKeyEvent(event);
+                        } else {
+                            if (event.getRepeatCount() == 0) {
+                                episodeGestureDone = false;
+                                forwardKeyToWebView(event.getKeyCode()); // Tua ở Web
+                            } else if (!episodeGestureDone && event.getRepeatCount() >= 2) {
+                                episodeGestureDone = true;
+                                jsKey(event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT ? "epprev" : "epnext");
+                            }
+                            return true;
                         }
-                        return true;
                 }
             }
         }
@@ -188,17 +186,18 @@ public class MainActivity extends Activity {
         int w = decor.getWidth();
         int h = decor.getHeight();
 
-        // 1. Tọa độ nút "Đóng thông báo"
         tap(decor, w * 0.66f, h * 0.65f);
-        // 2. Tọa độ nút "Bỏ qua quảng cáo >|" 
         decor.postDelayed(() -> tap(decor, w * 0.85f, h * 0.85f), 100);
-        // 3. Tọa độ nút "Kiểm tra lại"
         decor.postDelayed(() -> tap(decor, w * 0.40f, h * 0.65f), 200);
 
-        // RESET LẠI FOCUS SAU KHI CLICK - Khắc phục lỗi phím OK không pause được video
+        // BẮT BUỘC KHÔI PHỤC FOCUS SAU KHI CHẠM ẢO ĐỂ KHÔNG BỊ LIỆT PHÍM
         decor.postDelayed(() -> {
-            webView.requestFocus();
-            webView.evaluateJavascript("if(window.tvFocusOurPage) window.tvFocusOurPage();", null);
+            if (customView != null) {
+                customView.requestFocus();
+            } else {
+                webView.requestFocus();
+                webView.evaluateJavascript("if(window.tvFocusOurPage) window.tvFocusOurPage();", null);
+            }
         }, 300);
     }
 
@@ -223,6 +222,11 @@ public class MainActivity extends Activity {
             mediaControllerVisible = true;
         } else {
             tap(decor, bx, by);
+        }
+        
+        // Khôi phục Focus cho video toàn màn hình sau khi chạm Play/Pause
+        if (customView != null) {
+            decor.postDelayed(() -> customView.requestFocus(), 400);
         }
     }
 
@@ -274,6 +278,9 @@ public class MainActivity extends Activity {
 
             setContentView(fullscreenContainer);
             applyImmersive();
+            
+            // Ép Focus vào video khi hiển thị toàn màn hình
+            view.requestFocus();
 
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -289,6 +296,9 @@ public class MainActivity extends Activity {
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             setContentView(rootLayout);
             applyImmersive();
+            
+            // Trả Focus về Web khi thu nhỏ
+            webView.requestFocus();
 
             customView = null;
             mediaControllerVisible = false;
