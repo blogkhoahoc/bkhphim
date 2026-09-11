@@ -26,6 +26,8 @@ public class MainActivity extends Activity {
 
     // true khi màn trình phát đang mở (do trang web báo qua TvBridge)
     private volatile boolean playerOpen = false;
+    // thanh điều khiển video hệ thống (MediaController) đang hiển thị hay không
+    private boolean mediaControllerVisible = false;
 
     // Fullscreen video (custom view) state
     private View customView;
@@ -85,34 +87,96 @@ public class MainActivity extends Activity {
     /**
      * Khi trình phát đang mở, chặn phím remote TẠI ĐÂY thay vì để WebView đưa
      * xuống iframe (trình phát nhúng bên thứ ba sẽ nuốt mất phím và app không
-     * còn cách nào điều khiển):
-     *   OK            = phát/dừng  (giả lập cú chạm giữa màn hình video)
+     * còn cách nào điều khiển).
+     *
+     * Ngoại lệ: khi video đang chạy toàn màn hình HỆ THỐNG (custom view là
+     * SurfaceView/TextureView của video), ta nhường phím mũi tên cho thanh điều
+     * khiển của Android (MediaController) tự xử lý — D-pad focus nút, ◀ ▶ tua.
+     *   OK            = phát/dừng
      *   DPAD_UP       = bật/tắt toàn màn hình
      *   DPAD_LEFT/RIGHT = tập trước / tập sau
      */
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (playerOpen && event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
-            switch (event.getKeyCode()) {
-                case KeyEvent.KEYCODE_DPAD_CENTER:
-                case KeyEvent.KEYCODE_ENTER:
-                case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-                case KeyEvent.KEYCODE_MEDIA_PLAY:
-                case KeyEvent.KEYCODE_MEDIA_PAUSE:
-                    tapCenter();
+        if (playerOpen && event.getAction() == KeyEvent.ACTION_DOWN) {
+            boolean nativeVideoFs = customView != null && isNativeVideoFullscreen(customView);
+            if (nativeVideoFs) {
+                // Video hệ thống: OK = bấm nút play/pause trên MediaController,
+                // các phím còn lại nhường nguyên viện cho Android (tua/focus)
+                if ((event.getKeyCode() == KeyEvent.KEYCODE_DPAD_CENTER
+                        || event.getKeyCode() == KeyEvent.KEYCODE_ENTER)
+                        && event.getRepeatCount() == 0) {
+                    toggleNativeVideoPlayPause();
                     return true;
-                case KeyEvent.KEYCODE_DPAD_UP:
-                    jsKey("up");
-                    return true;
-                case KeyEvent.KEYCODE_DPAD_LEFT:
-                    jsKey("left");
-                    return true;
-                case KeyEvent.KEYCODE_DPAD_RIGHT:
-                    jsKey("right");
-                    return true;
+                }
+                return super.dispatchKeyEvent(event);
+            }
+            if (event.getRepeatCount() == 0) {
+                switch (event.getKeyCode()) {
+                    case KeyEvent.KEYCODE_DPAD_CENTER:
+                    case KeyEvent.KEYCODE_ENTER:
+                    case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+                    case KeyEvent.KEYCODE_MEDIA_PLAY:
+                    case KeyEvent.KEYCODE_MEDIA_PAUSE:
+                        tapCenter();
+                        return true;
+                    case KeyEvent.KEYCODE_DPAD_UP:
+                        jsKey("up");
+                        return true;
+                    case KeyEvent.KEYCODE_DPAD_LEFT:
+                        jsKey("left");
+                        return true;
+                    case KeyEvent.KEYCODE_DPAD_RIGHT:
+                        jsKey("right");
+                        return true;
+                }
             }
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    /** Custom view này có phải là surface video toàn màn hình của HTML5 không */
+    private boolean isNativeVideoFullscreen(View v) {
+        if (v instanceof android.view.SurfaceView || v instanceof android.view.TextureView) return true;
+        if (v instanceof ViewGroup) {
+            ViewGroup g = (ViewGroup) v;
+            for (int i = 0; i < g.getChildCount(); i++) {
+                if (isNativeVideoFullscreen(g.getChildAt(i))) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Phát/dừng khi video đang ở toàn màn hình hệ thống: MediaController của
+     * Android có nút play/pause ở góc trái dưới. Nếu thanh điều khiển đang ẩn,
+     * cú chạm đầu sẽ làm nó hiện lên, cú chạm sau (350ms) bấm vào nút.
+     */
+    private void toggleNativeVideoPlayPause() {
+        View decor = getWindow().getDecorView();
+        float bx = dp(34);
+        float by = decor.getHeight() - dp(26);
+        if (!mediaControllerVisible) {
+            tap(decor, bx, by);                                    // hiện thanh điều khiển
+            decor.postDelayed(() -> tap(decor, bx, by), 350);      // bấm nút play/pause
+            mediaControllerVisible = true;
+        } else {
+            tap(decor, bx, by);                                    // bấm thẳng nút
+        }
+    }
+
+    private void tap(View decor, float x, float y) {
+        long now = SystemClock.uptimeMillis();
+        MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, x, y, 0);
+        decor.dispatchTouchEvent(down);
+        MotionEvent up = MotionEvent.obtain(now, now + 60, MotionEvent.ACTION_UP, x, y, 0);
+        decor.dispatchTouchEvent(up);
+        down.recycle();
+        up.recycle();
+    }
+
+    private float dp(int v) {
+        return v * getResources().getDisplayMetrics().density;
     }
 
     private void jsKey(String key) {
@@ -122,15 +186,7 @@ public class MainActivity extends Activity {
     /** Giả lập cú chạm giữa màn hình — chủ yếu để phát/dừng video trong iframe */
     private void tapCenter() {
         View decor = getWindow().getDecorView();
-        long now = SystemClock.uptimeMillis();
-        float x = decor.getWidth() / 2f;
-        float y = decor.getHeight() / 2f;
-        MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, x, y, 0);
-        decor.dispatchTouchEvent(down);
-        MotionEvent up = MotionEvent.obtain(now, now + 80, MotionEvent.ACTION_UP, x, y, 0);
-        decor.dispatchTouchEvent(up);
-        down.recycle();
-        up.recycle();
+        tap(decor, decor.getWidth() / 2f, decor.getHeight() / 2f);
     }
 
     /**
@@ -175,6 +231,7 @@ public class MainActivity extends Activity {
             applyImmersive();
 
             customView = null;
+            mediaControllerVisible = false;
             if (customViewCallback != null) {
                 customViewCallback.onCustomViewHidden();
                 customViewCallback = null;
@@ -186,7 +243,9 @@ public class MainActivity extends Activity {
         }
     }
 
-    // Phím Back: thoát fullscreen -> quay lại trong WebView -> thoát app
+    // Phím Back: thoát fullscreen -> đóng trình phát -> về trang chủ -> thoát app.
+    // Trang web tự quyết định qua window.tvBack(): trả về true nghĩa là "đã xử lý",
+    // false nghĩa là đang ở trang chủ -> thoát app thật.
     @Override
     public void onBackPressed() {
         if (customView != null) {               // đang fullscreen video -> thoát fullscreen trước
@@ -196,11 +255,9 @@ public class MainActivity extends Activity {
                 value -> { if (value == null || value.indexOf("1") == -1) chromeClient.onHideCustomView(); });
             return;
         }
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
+        webView.evaluateJavascript(
+            "(function(){try{if(window.tvBack&&window.tvBack())return '1';}catch(e){}return '0';})()",
+            value -> { if (value == null || value.indexOf("1") == -1) finish(); });
     }
 
     @Override

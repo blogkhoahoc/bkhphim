@@ -1003,6 +1003,14 @@
       else if (k === 'right') nextEpisode();
       else if (k === 'up') toggleTvFullscreen();
     };
+    // Phím Back trên TV: Android gọi hàm này trước khi thoát app.
+    // Trả về true = đã xử lý (đóng lớp nào đó); false = đang ở trang chủ -> thoát app.
+    window.tvBack = function () {
+      if (!playerModalEl.classList.contains('hidden')) { closePlayer(); return true; }
+      if (!detailModalEl.classList.contains('hidden')) { closeModal(); return true; }
+      if (currentTab !== 'home') { switchTab('home'); return true; }
+      return false;
+    };
 
     function openPlayer(embedUrl, title, epName) {
       const modal = document.getElementById('playerModal');
