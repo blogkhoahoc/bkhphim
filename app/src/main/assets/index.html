@@ -187,7 +187,6 @@
     body.tv .movie-card:focus { transform: scale(1.09); }
     body.tv .movie-card:focus .card-play { opacity: 1 !important; transform: scale(1) !important; }
     body.tv .movie-card:focus h4 { color: #c084fc !important; }
-    /* TV grid: fewer columns, bigger cards */
     body.tv .tv-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.5rem; }
     body.tv .tv-grid .movie-card { animation: none; }
     body.tv { font-size: 18px; }
@@ -224,7 +223,6 @@
     body.tv #pagination { margin-bottom: 3rem; }
     body.tv .aurora-blob { opacity: 0.25; }
     body.tv #playerEpBar { display: block !important; }
-    /* Sidebar nav (TV) */
     .tv-sidebar-item { border-left: 4px solid transparent; }
     .tv-sidebar-item:focus { border-left-color: #8b5cf6; }
   </style>
@@ -257,7 +255,7 @@
     </button>
     <div class="mt-auto px-2 text-xs text-slate-500 leading-relaxed tv-only">
       <p class="flex items-center gap-2 mb-1"><i class="fa-solid fa-circle-info text-brand-500"></i> Dùng remote để điều hướng</p>
-      <p class="pl-6">Khi xem phim: OK phát/dừng · ◀ ▶ tua · giữ ◀ ▶ đổi tập</p>
+      <p class="pl-6">Khi xem: OK phát/dừng · ▲ thu/phóng · giữ OK xóa quảng cáo</p>
     </div>
   </nav>
 
@@ -322,7 +320,7 @@
         <span class="w-1 h-6 bg-gradient-to-b from-brand-400 to-accent-400 rounded-full inline-block"></span>
         <span>Xem Tiếp</span>
       </h2>
-      <button onclick="clearContinue()" class="text-xs text-slate-500 hover:text-brand-500 transition">Xóa tất cả</button>
+      <button onclick="clearContinue()" class="text-xs text-slate-500 hover:text-brand-500 transition focusable px-2 py-1">Xóa tất cả</button>
     </div>
     <div id="continueGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5"></div>
   </div>
@@ -334,13 +332,13 @@
         <i class="fa-solid fa-sliders text-brand-500"></i>
         <h3 class="font-bold text-slate-200 text-sm sm:text-base">Bộ Lọc Phim</h3>
       </div>
-      <button onclick="triggerRandomMovie()" class="text-xs font-bold bg-brand-500/10 text-brand-400 border border-brand-500/30 px-3.5 py-1.5 rounded-full hover:bg-brand-500 hover:text-white transition flex items-center gap-1.5">
+      <button onclick="triggerRandomMovie()" class="text-xs font-bold bg-brand-500/10 text-brand-400 border border-brand-500/30 px-3.5 py-1.5 rounded-full hover:bg-brand-500 hover:text-white transition flex items-center gap-1.5 focusable">
         <i class="fa-solid fa-shuffle"></i> <span class="hidden sm:inline">Hôm Nay Xem Gì?</span><span class="sm:hidden">Ngẫu nhiên</span>
       </button>
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
       <div class="relative">
-        <select id="fType" onchange="runFilter('type')" class="w-full bg-dark-800/80 text-xs sm:text-sm text-slate-200 font-medium px-4 py-3 rounded-2xl border border-white/10 focus:border-brand-500 focus:outline-none appearance-none cursor-pointer hover:bg-dark-700 transition">
+        <select id="fType" onchange="runFilter('type')" class="w-full bg-dark-800/80 text-xs sm:text-sm text-slate-200 font-medium px-4 py-3 rounded-2xl border border-white/10 focus:border-brand-500 focus:outline-none appearance-none cursor-pointer hover:bg-dark-700 transition focusable">
           <option value="" class="bg-dark-800 text-slate-300">🎬 Loại: Tất cả</option>
           <option value="phim-bo" class="bg-dark-800 text-slate-300">Phim Bộ</option>
           <option value="phim-le" class="bg-dark-800 text-slate-300">Phim Lẻ</option>
@@ -351,7 +349,7 @@
         <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
       </div>
       <div class="relative">
-        <select id="fGenre" onchange="runFilter('genre')" class="w-full bg-dark-800/80 text-xs sm:text-sm text-slate-200 font-medium px-4 py-3 rounded-2xl border border-white/10 focus:border-brand-500 focus:outline-none appearance-none cursor-pointer hover:bg-dark-700 transition">
+        <select id="fGenre" onchange="runFilter('genre')" class="w-full bg-dark-800/80 text-xs sm:text-sm text-slate-200 font-medium px-4 py-3 rounded-2xl border border-white/10 focus:border-brand-500 focus:outline-none appearance-none cursor-pointer hover:bg-dark-700 transition focusable">
           <option value="" class="bg-dark-800 text-slate-300">🎭 Thể Loại: Tất cả</option>
           <option value="hanh-dong" class="bg-dark-800 text-slate-300">Hành Động</option>
           <option value="phieu-luu" class="bg-dark-800 text-slate-300">Phiêu Lưu</option>
@@ -379,7 +377,7 @@
         <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
       </div>
       <div class="relative">
-        <select id="fCountry" onchange="runFilter('country')" class="w-full bg-dark-800/80 text-xs sm:text-sm text-slate-200 font-medium px-4 py-3 rounded-2xl border border-white/10 focus:border-brand-500 focus:outline-none appearance-none cursor-pointer hover:bg-dark-700 transition">
+        <select id="fCountry" onchange="runFilter('country')" class="w-full bg-dark-800/80 text-xs sm:text-sm text-slate-200 font-medium px-4 py-3 rounded-2xl border border-white/10 focus:border-brand-500 focus:outline-none appearance-none cursor-pointer hover:bg-dark-700 transition focusable">
           <option value="" class="bg-dark-800 text-slate-300">🌍 Quốc Gia: Tất cả</option>
           <option value="au-my" class="bg-dark-800 text-slate-300">Âu Mỹ</option>
           <option value="anh" class="bg-dark-800 text-slate-300">Anh</option>
@@ -403,7 +401,7 @@
       <div class="relative">
         <input type="number" id="fYear" min="1800" placeholder="📅 Năm (VD: 2024)..."
           onchange="runFilter('year')" onkeyup="if(event.key === 'Enter') runFilter('year')"
-          class="w-full bg-dark-800/80 text-xs sm:text-sm text-slate-200 font-medium px-4 py-3 rounded-2xl border border-white/10 focus:border-brand-500 focus:outline-none placeholder-slate-600 hover:bg-dark-700 transition">
+          class="w-full bg-dark-800/80 text-xs sm:text-sm text-slate-200 font-medium px-4 py-3 rounded-2xl border border-white/10 focus:border-brand-500 focus:outline-none placeholder-slate-600 hover:bg-dark-700 transition focusable">
       </div>
     </div>
   </div>
@@ -419,11 +417,11 @@
     </div>
     <div id="movieGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5 tv-grid"></div>
     <div id="pagination" class="flex justify-center items-center gap-3 mt-10 hidden">
-      <button onclick="changePage(-1)" class="px-5 py-2.5 rounded-2xl glass hover:bg-brand-500 hover:text-white transition text-sm font-bold flex items-center gap-2 text-slate-300 border border-white/10">
+      <button onclick="changePage(-1)" class="px-5 py-2.5 rounded-2xl glass hover:bg-brand-500 hover:text-white transition text-sm font-bold flex items-center gap-2 text-slate-300 border border-white/10 focusable">
         <i class="fa-solid fa-chevron-left text-xs"></i> Trước
       </button>
       <span id="pageInfo" class="text-sm font-bold text-brand-400 bg-brand-500/10 px-4 py-2 rounded-xl border border-brand-500/30 shadow-[0_0_15px_rgba(139,92,246,0.15)]">1 / 1</span>
-      <button onclick="changePage(1)" class="px-5 py-2.5 rounded-2xl glass hover:bg-brand-500 hover:text-white transition text-sm font-bold flex items-center gap-2 text-slate-300 border border-white/10">
+      <button onclick="changePage(1)" class="px-5 py-2.5 rounded-2xl glass hover:bg-brand-500 hover:text-white transition text-sm font-bold flex items-center gap-2 text-slate-300 border border-white/10 focusable">
         Sau <i class="fa-solid fa-chevron-right text-xs"></i>
       </button>
     </div>
@@ -433,7 +431,7 @@
   <div id="detailModal" class="fixed inset-0 z-50 bg-dark-950/98 backdrop-blur-2xl overflow-y-auto hidden touch-pan-y">
     <div class="max-w-6xl mx-auto px-4 py-4 sm:py-8 min-h-screen">
       <div class="sticky top-0 z-30 -mx-4 px-4 py-3 bg-gradient-to-b from-dark-950 to-transparent mb-4">
-        <button onclick="closeModal()" class="px-4 py-2 rounded-xl glass hover:bg-white/10 text-sm font-semibold flex items-center gap-2 transition border border-white/10 w-fit">
+        <button onclick="closeModal()" class="px-4 py-2 rounded-xl glass hover:bg-white/10 text-sm font-semibold flex items-center gap-2 transition border border-white/10 w-fit focusable">
           <i class="fa-solid fa-arrow-left text-brand-500"></i> Quay lại
         </button>
       </div>
@@ -454,10 +452,10 @@
             <span id="dDuration" class="px-2.5 py-1 bg-dark-700 text-slate-300 font-semibold text-[10px] sm:text-xs rounded-lg border border-white/5 hidden"></span>
           </div>
           <div class="flex flex-wrap items-center gap-3">
-            <button id="favBtn" onclick="toggleFav()" class="px-5 py-2.5 rounded-xl border border-brand-500/40 text-brand-400 font-bold text-sm hover:bg-brand-500 hover:text-white transition flex items-center gap-2">
+            <button id="favBtn" onclick="toggleFav()" class="focusable px-5 py-2.5 rounded-xl border border-brand-500/40 text-brand-400 font-bold text-sm hover:bg-brand-500 hover:text-white transition flex items-center gap-2">
               <i class="fa-regular fa-heart"></i> <span id="favText">Yêu Thích</span>
             </button>
-            <button onclick="shareMovie()" class="px-5 py-2.5 rounded-xl border border-white/10 text-slate-300 font-bold text-sm hover:bg-white/10 transition flex items-center gap-2">
+            <button onclick="shareMovie()" class="focusable px-5 py-2.5 rounded-xl border border-white/10 text-slate-300 font-bold text-sm hover:bg-white/10 transition flex items-center gap-2">
               <i class="fa-solid fa-share-nodes"></i> Chia sẻ
             </button>
           </div>
@@ -471,8 +469,8 @@
             <i class="fa-solid fa-list-ul text-brand-500"></i> Danh Sách Tập
           </h3>
           <div class="flex items-center gap-2">
-            <button onclick="jumpToFirstEp()" class="text-xs bg-dark-800 hover:bg-brand-500 hover:text-white text-slate-400 px-3 py-1.5 rounded-lg transition border border-white/10">Tập đầu</button>
-            <button onclick="jumpToLatestEp()" class="text-xs bg-dark-800 hover:bg-brand-500 hover:text-white text-slate-400 px-3 py-1.5 rounded-lg transition border border-white/10">Tập mới nhất</button>
+            <button onclick="jumpToFirstEp()" class="focusable text-xs bg-dark-800 hover:bg-brand-500 hover:text-white text-slate-400 px-3 py-1.5 rounded-lg transition border border-white/10">Tập đầu</button>
+            <button onclick="jumpToLatestEp()" class="focusable text-xs bg-dark-800 hover:bg-brand-500 hover:text-white text-slate-400 px-3 py-1.5 rounded-lg transition border border-white/10">Tập mới nhất</button>
           </div>
         </div>
         <div id="epList" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-2"></div>
@@ -490,23 +488,23 @@
   <div id="playerModal" class="fixed inset-0 z-[9999] hidden flex-col bg-black safe-top safe-bottom safe-x">
     <div class="player-header flex items-center justify-between px-4 py-3 sm:py-4 shrink-0 z-50">
       <div class="flex items-center gap-3 min-w-0">
-        <button onclick="closePlayer()" class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-brand-500 text-white transition shrink-0 backdrop-blur-md border border-white/10">
+        <button onclick="closePlayer()" class="focusable flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-brand-500 text-white transition shrink-0 backdrop-blur-md border border-white/10">
           <i class="fa-solid fa-chevron-down text-sm"></i>
         </button>
         <div class="min-w-0">
           <h3 id="playerTitle" class="text-white font-bold text-sm sm:text-base truncate">Tên phim</h3>
           <p id="playerEpName" class="text-slate-400 text-xs truncate">Tập 1</p>
         </div>
-        <span class="tv-only text-[11px] text-slate-500 shrink-0 hidden lg:inline">OK phát/dừng · ◀ ▶ tua · giữ ◀ ▶ đổi tập · ▼ chọn nút · giữ ▲ phóng to · Back thoát</span>
+        <span class="tv-only text-[11px] text-slate-500 shrink-0 hidden lg:inline">OK phát/dừng · ▲ thu/phóng · giữ OK xóa quảng cáo</span>
       </div>
       <div class="flex items-center gap-2 shrink-0">
-        <button onclick="requestPlayerFullscreen()" title="Toàn màn hình" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10">
+        <button onclick="requestPlayerFullscreen()" title="Toàn màn hình" class="focusable w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10">
           <i class="fa-solid fa-expand"></i>
         </button>
-        <button onclick="togglePlayerFav()" id="playerFavBtn" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10">
+        <button onclick="togglePlayerFav()" id="playerFavBtn" class="focusable w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10">
           <i class="fa-regular fa-heart"></i>
         </button>
-        <button onclick="shareMovie()" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10">
+        <button onclick="shareMovie()" class="focusable w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10">
           <i class="fa-solid fa-share-nodes"></i>
         </button>
       </div>
@@ -524,20 +522,19 @@
     </div>
     <div id="playerEpBar" class="shrink-0 bg-dark-950 border-t border-white/10 px-4 py-3 hidden sm:block">
       <div class="flex items-center gap-3 max-w-4xl mx-auto">
-        <button onclick="prevEpisode()" id="prevEpBtn" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-brand-500 text-slate-300 hover:text-white text-xs font-bold transition border border-white/10 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed">
+        <button onclick="prevEpisode()" id="prevEpBtn" class="focusable px-4 py-2 rounded-xl bg-dark-800 hover:bg-brand-500 text-slate-300 hover:text-white text-xs font-bold transition border border-white/10 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed">
           <i class="fa-solid fa-backward-step"></i> Tập trước
         </button>
         <div class="flex-1 text-center">
           <span id="playerEpIndicator" class="text-xs text-slate-500 font-medium">Tập 1 / 10</span>
         </div>
-        <button onclick="nextEpisode()" id="nextEpBtn" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-brand-500 text-slate-300 hover:text-white text-xs font-bold transition border border-white/10 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed">
+        <button onclick="nextEpisode()" id="nextEpBtn" class="focusable px-4 py-2 rounded-xl bg-dark-800 hover:bg-brand-500 text-slate-300 hover:text-white text-xs font-bold transition border border-white/10 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed">
           Tập sau <i class="fa-solid fa-forward-step"></i>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ================= BOTTOM NAV (MOBILE) ================= -->
   <nav class="mobile-only fixed bottom-0 inset-x-0 z-40 glass-strong border-t border-white/10 py-2 sm:py-3 safe-bottom safe-x">
     <div class="max-w-md mx-auto flex justify-around items-center relative">
       <div id="navIndicator" class="absolute bottom-0 h-[3px] bg-brand-500 rounded-full transition-all duration-300" style="width: 33%; left: 0; box-shadow: 0 0 10px rgba(139,92,246,0.6);"></div>
@@ -570,13 +567,10 @@
     const currentYear = new Date().getFullYear();
     let playerTouchStartY = 0;
 
-    // ==================== TV DETECTION ====================
     const IS_TV = /Android.*;\s*(TV|Leanback)|SmartTV|AppleTV|GoogleTV|CrKey|Web0S|Tizen\s*TB|BRAVIA|AFT|MiTV|MiBOX/i.test(navigator.userAgent)
       || (window.innerWidth >= 1500 && !('ontouchstart' in window));
     if (IS_TV) document.body.classList.add('tv');
-    // Bố cục TV (đẩy nội dung sang phải sidebar) xử lý bằng CSS body.tv — không cần JS
 
-    // ==================== SPATIAL (D-PAD) NAVIGATION ====================
     const playerModalEl = document.getElementById('playerModal');
     const detailModalEl = document.getElementById('detailModal');
 
@@ -597,11 +591,10 @@
       )).filter(isFocusable);
     }
     function focusFirst(force) {
-      if (!force && !playerModalEl.classList.contains('hidden')) return; // trong trình phát: điều khiển bằng phím tắt
+      if (!force && !playerModalEl.classList.contains('hidden')) return;
       const first = queryFocusables(activeScope())[0];
       if (first) { first.focus({ preventScroll: true }); first.scrollIntoView({ block: 'center' }); }
     }
-    // Tìm phần tử gần nhất theo hướng (ddx, ddy) trong phạm vi scope
     function spatialBest(scope, active, ddx, ddy) {
       const r = active.getBoundingClientRect();
       const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -615,7 +608,7 @@
         const primary = dx * ddx + dy * ddy;
         if (primary <= 4) return;
         const perp = Math.abs(dx * ddy - dy * ddx);
-        const score = primary + perp * 2.5; // phạt lệch hướng tuyến tính — không nhảy xa oan
+        const score = primary + perp * 2.5; 
         if (score < bestScore) { bestScore = score; best = el; }
       });
       return best;
@@ -636,7 +629,6 @@
     function hideTvMenu() {
       if (!IS_TV) return;
       document.body.classList.remove('menu-open');
-      // Trả lại focus cho khu vực lưới phim nếu người dùng đang kẹt trong menu
       const active = document.activeElement;
       if (active && active.closest('nav.tv-only')) {
         focusFirst();
@@ -644,7 +636,7 @@
     }
     function resetTvMenuTimer() {
       clearTimeout(tvMenuTimeout);
-      tvMenuTimeout = setTimeout(hideTvMenu, 5000); // Tự động ẩn sau 5 giây
+      tvMenuTimeout = setTimeout(hideTvMenu, 5000);
     }
 
     document.addEventListener('keydown', e => {
@@ -653,7 +645,6 @@
       const playerOpen = !playerModalEl.classList.contains('hidden');
       if (playerOpen && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
 
-      // --- LOGIC ẨN/HIỆN MENU ---
       if (document.body.classList.contains('menu-open')) {
         resetTvMenuTimer(); 
       }
@@ -664,12 +655,10 @@
         e.preventDefault();
         return; 
       }
-      // --- KẾT THÚC LOGIC MENU ---
 
       const active = document.activeElement;
-      // Ô nhập liệu: giữ mũi tên trái/phải làm con trỏ soạn thảo
       if (active && active.tagName === 'INPUT' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
-      e.preventDefault(); // chặn cuộn/trỏ gốc của trang
+      e.preventDefault();
       
       if (!isFocusable(active)) { focusFirst(); return; }
       const [ddx, ddy] = DPAD_DIRS[e.key];
@@ -682,7 +671,6 @@
       }
     });
 
-    // ==================== TOAST ====================
     function showToast(msg, type = 'success') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
@@ -695,7 +683,6 @@
       setTimeout(() => { toast.classList.add('translate-x-full'); setTimeout(() => toast.remove(), 300); }, 3000);
     }
 
-    // ==================== SEARCH ====================
     function handleLiveSearch() {
       const input = document.getElementById('searchInput');
       const clearBtn = document.getElementById('searchClear');
@@ -721,7 +708,6 @@
       loadHome();
     }
 
-    // ==================== FILTERS ====================
     function resetFilters() {
       document.getElementById('fType').value = "";
       document.getElementById('fGenre').value = "";
@@ -762,7 +748,6 @@
       return baseUrl.includes('?') ? `${baseUrl}&page=${page}` : `${baseUrl}?page=${page}`;
     }
 
-    // ==================== FETCH & RENDER ====================
     async function fetchMovies(url, isHome = false) {
       const grid = document.getElementById('movieGrid');
       grid.innerHTML = Array(12).fill(0).map(() => `
@@ -800,7 +785,7 @@
         grid.innerHTML = `<div class="col-span-full text-center py-16">
           <i class="fa-solid fa-triangle-exclamation text-4xl text-slate-600 mb-3"></i>
           <p class="text-slate-400">Không thể tải danh sách phim!</p>
-          <button onclick="fetchMovies('${url}', ${isHome})" class="mt-3 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-bold">Thử lại</button>
+          <button onclick="fetchMovies('${url}', ${isHome})" class="mt-3 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-bold focusable">Thử lại</button>
         </div>`;
       }
     }
@@ -834,7 +819,6 @@
       renderContinueWatching();
     }
 
-    // ==================== HERO ====================
     function setupHero(movie) {
       const hero = document.getElementById('heroSection');
       hero.classList.remove('hidden');
@@ -852,7 +836,6 @@
       document.getElementById('heroSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    // ==================== GRID ====================
     function movieCardHTML(m, i) {
       return `
         <div onclick="openDetail('${m.slug}')" tabindex="0" role="button" aria-label="${m.name}"
@@ -887,7 +870,6 @@
       grid.innerHTML = items.map(movieCardHTML).join('');
     }
 
-    // ==================== CONTINUE WATCHING ====================
     function renderContinueWatching() {
       const cont = JSON.parse(localStorage.getItem('ultra_cont') || '[]');
       const section = document.getElementById('continueSection');
@@ -925,7 +907,6 @@
       localStorage.setItem('ultra_cont', JSON.stringify(cont.slice(0, 10)));
     }
 
-    // ==================== DETAIL MODAL ====================
     async function openDetail(slug) {
       const modal = document.getElementById('detailModal');
       modal.classList.remove('hidden');
@@ -960,7 +941,7 @@
         try { renderMetaTags(); } catch (e) { console.warn('Meta tags error', e); }
         renderEpisodes();
         try { renderRelated(slug); } catch (e) { console.warn('Related error', e); }
-        if (IS_TV) setTimeout(focusFirst, 150); // TV: đưa focus vào trong modal chi tiết
+        if (IS_TV) setTimeout(focusFirst, 150);
       } catch (e) {
         showToast('Không thể mở thông tin phim!', 'error');
       }
@@ -1039,22 +1020,17 @@
       }
     }
 
-    // ==================== PLAYER ====================
-    // Fullscreen hoạt động cả trong WebView Android: WebView sẽ gọi onShowCustomView
-    // (MainActivity đã cài) -> video chiếm toàn màn hình + khóa xoay ngang.
     function requestPlayerFullscreen() {
       const el = document.getElementById('videoIframe');
       try {
         const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
         if (fn) { const p = fn.call(el); if (p && p.catch) p.catch(() => {}); }
-      } catch (err) { /* một số nguồn nhúng chặn fullscreen từ trang gốc */ }
+      } catch (err) {}
     }
-    // Điều khiển từ remote trên TV: MainActivity chặn phím (vì iframe nuốt phím)
-    // rồi gọi lại vào đây. Cơ chế: khi đã chạm vào video, iframe (player nhúng)
-    // giữ keyboard focus -> bơm phím thật (Space / ← →) vào là player nhúng tự
-    // phát/dừng và tự tua, đúng chuẩn các trình phát web.
-    let tvIframeFocused = false; // iframe nhúng có đang giữ keyboard focus không
-    let tvControlsMode = false;  // false = đang ở chế độ video; true = đang chọn nút của app
+    
+    let tvIframeFocused = false;
+    let tvControlsMode = false;
+    
     function tvFocusOurPage() {
       tvIframeFocused = false;
       try {
@@ -1064,12 +1040,11 @@
     }
     function tvSendSeek(code) {
       if (!window.TvBridge) return;
-      if (!tvIframeFocused) { TvBridge.tapVideo(); tvIframeFocused = true; } // chạm video trước để iframe nhận phím
-      else TvBridge.sendKey(code); // phím thật -> player nhúng tự tua
+      if (!tvIframeFocused) { TvBridge.tapVideo(); tvIframeFocused = true; } 
+      else TvBridge.sendKey(code); 
     }
     function tvTogglePlay() {
       if (!window.TvBridge) return;
-      // chạm video (đảm bảo iframe focus) + gửi Space -> player nhúng tự phát/dừng
       TvBridge.tapVideo();
       setTimeout(() => TvBridge.sendKey(' '), 150);
     }
@@ -1087,7 +1062,7 @@
       const active = document.activeElement;
       if (k === 'ok') {
         if (tvControlsMode && active && playerModalEl.contains(active) && active.tagName === 'BUTTON') {
-          active.click(); // bấm nút của app đang chọn (đổi tập, fullscreen, đóng...)
+          active.click(); 
         } else {
           tvTogglePlay();
         }
@@ -1101,14 +1076,13 @@
           else focusFirst(true);
         } else {
           tvFocusOurPage();
-          toggleTvFullscreen(); // ở chế độ video: ▲ = thu nhỏ/phóng to
+          toggleTvFullscreen(); 
         }
       } else if (k === 'down') {
         if (tvControlsMode) {
           if (isFocusable(active)) spatialFocus(spatialBest(playerModalEl, active, 0, 1));
           else focusFirst(true);
         } else {
-          // từ chế độ video bấm ▼ để chuyển sang chọn các nút của app
           tvControlsMode = true;
           tvFocusOurPage();
           focusFirst(true);
@@ -1124,8 +1098,7 @@
         nextEpisode();
       }
     };
-    // Phím Back trên TV: Android gọi hàm này trước khi thoát app.
-    // Trả về true = đã xử lý (đóng lớp nào đó); false = đang ở trang chủ -> thoát app.
+    
     window.tvBack = function () {
       if (!playerModalEl.classList.contains('hidden')) { closePlayer(); return true; }
       if (!detailModalEl.classList.contains('hidden')) { closeModal(); return true; }
@@ -1144,11 +1117,10 @@
       document.body.style.overflow = 'hidden';
       updatePlayerNav();
       updatePlayerFavIcon();
-      tvIframeFocused = false; // iframe mới, phải chạm lần đầu mới nhận phím
-      tvControlsMode = false;  // bắt đầu ở chế độ video
-      // Báo Android: đang ở màn trình phát -> Activity sẽ chặn & xử lý phím remote
+      tvIframeFocused = false; 
+      tvControlsMode = false;  
       if (window.TvBridge) { try { TvBridge.setPlayerOpen(IS_TV); } catch (e) {} }
-      if (IS_TV) setTimeout(requestPlayerFullscreen, 200); // TV: tự vào toàn màn hình ngay
+      if (IS_TV) setTimeout(requestPlayerFullscreen, 200); 
       if (!IS_TV && window.innerWidth < 640) {
         const hint = document.getElementById('swipeHint');
         hint.style.opacity = '1';
@@ -1204,7 +1176,6 @@
       }
     }
 
-    // Swipe to close player (mobile only)
     const playerModal = document.getElementById('playerModal');
     playerModal.addEventListener('touchstart', e => { playerTouchStartY = e.touches[0].clientY; }, { passive: true });
     playerModal.addEventListener('touchend', e => {
@@ -1212,7 +1183,6 @@
       if (diff > 80 && playerTouchStartY < 100) closePlayer();
     }, { passive: true });
 
-    // ==================== FAVORITES ====================
     function updateFavBtnState() {
       const favs = JSON.parse(localStorage.getItem('ultra_favs') || '[]');
       const isFav = currentMovie && favs.some(m => m.slug === currentMovie.slug);
@@ -1251,15 +1221,21 @@
       btn.innerHTML = isFav ? '<i class="fa-solid fa-heart text-brand-500"></i>' : '<i class="fa-regular fa-heart"></i>';
     }
 
-    // ==================== HISTORY ====================
     function saveHistory(movie, epName) {
       let hist = JSON.parse(localStorage.getItem('ultra_hist') || '[]');
       hist = hist.filter(h => h.slug !== movie.slug);
       hist.unshift({ slug: movie.slug, name: movie.name, thumb_url: movie.thumb_url, current_episode: `Đang xem: Tập ${epName}` });
       localStorage.setItem('ultra_hist', JSON.stringify(hist.slice(0, 30)));
     }
+    
+    // Nút Xoá lịch sử
+    function clearHistory() {
+      localStorage.removeItem('ultra_hist');
+      renderGrid([]);
+      document.getElementById('resultCount').innerText = '0 phim';
+      showToast('Đã xóa lịch sử xem phim');
+    }
 
-    // ==================== SHARE ====================
     function shareMovie() {
       if (!currentMovie) return;
       const url = `${window.location.origin}${window.location.pathname}?movie=${currentMovie.slug}`;
@@ -1270,7 +1246,6 @@
       }
     }
 
-    // ==================== TABS & NAVIGATION ====================
     function switchTab(tab) {
       currentTab = tab;
       ['home', 'fav', 'history'].forEach(t => {
@@ -1285,6 +1260,7 @@
       const indicator = document.getElementById('navIndicator');
       if (indicator) indicator.style.left = tab === 'home' ? '0%' : tab === 'fav' ? '33.33%' : '66.66%';
       document.getElementById('pagination').classList.add('hidden');
+      
       if (tab === 'home') {
         document.getElementById('filterBar').classList.remove('hidden');
         loadHome();
@@ -1299,7 +1275,14 @@
       } else if (tab === 'history') {
         document.getElementById('filterBar').classList.add('hidden');
         document.getElementById('heroSection').classList.add('hidden');
-        document.getElementById('sectionTitle').innerHTML = `<span class="w-1.5 h-6 bg-gradient-to-b from-brand-400 to-accent-400 rounded-full inline-block"></span><span>Lịch Sử Xem Phim</span>`;
+        
+        // --- THÊM NÚT XOÁ LỊCH SỬ TẠI ĐÂY ---
+        document.getElementById('sectionTitle').innerHTML = `
+          <span class="w-1.5 h-6 bg-gradient-to-b from-brand-400 to-accent-400 rounded-full inline-block"></span>
+          <span>Lịch Sử Xem Phim</span> 
+          <button onclick="clearHistory()" class="ml-4 text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500 hover:text-white transition focusable"><i class="fa-solid fa-trash-can"></i> Xóa Lịch Sử</button>
+        `;
+        
         const hist = JSON.parse(localStorage.getItem('ultra_hist') || '[]');
         renderGrid(hist);
         document.getElementById('resultCount').innerText = `${hist.length} phim`;
@@ -1307,9 +1290,8 @@
       }
     }
 
-    // ==================== KEYBOARD / REMOTE SHORTCUTS ====================
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' || e.keyCode === 10009 || e.keyCode === 461) { // Back on webOS/Tizen too
+      if (e.key === 'Escape' || e.keyCode === 10009 || e.keyCode === 461) { 
         if (!document.getElementById('playerModal').classList.contains('hidden')) { closePlayer(); return; }
         if (!document.getElementById('detailModal').classList.contains('hidden')) { closeModal(); return; }
       }
@@ -1318,22 +1300,19 @@
         document.getElementById('searchInput').focus();
       }
       if ((e.key === 'r' || e.key === 'R') && document.activeElement.tagName !== 'INPUT') triggerRandomMovie();
-      // Trên TV: ◀ ▶ được Java chuyển thẳng vào player nhúng để tua video
-      // (giữ ◀ ▶ mới đổi tập), nên không gán đổi tập ở đây
+      
       if (!IS_TV && !document.getElementById('playerModal').classList.contains('hidden')) {
         if (e.key === 'ArrowLeft') { e.preventDefault(); prevEpisode(); }
         if (e.key === 'ArrowRight') { e.preventDefault(); nextEpisode(); }
       }
     });
 
-    // ==================== DEEP LINKING ====================
     function checkDeepLink() {
       const params = new URLSearchParams(window.location.search);
       const movieSlug = params.get('movie');
       if (movieSlug) setTimeout(() => openDetail(movieSlug), 500);
     }
 
-    // ==================== INIT ====================
     document.getElementById('fYear').max = currentYear;
     loadHome();
     checkDeepLink();
