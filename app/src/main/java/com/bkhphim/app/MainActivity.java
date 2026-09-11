@@ -121,7 +121,10 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() {
         if (customView != null) {               // đang fullscreen video -> thoát fullscreen trước
-            chromeClient.onHideCustomView();
+            // Thoát chuẩn qua Fullscreen API của trang; nếu không phải element-fullscreen thì ẩn thủ công
+            webView.evaluateJavascript(
+                "(function(){try{if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return '1';}}catch(e){}return '0';})()",
+                value -> { if (value == null || value.indexOf("1") == -1) chromeClient.onHideCustomView(); });
             return;
         }
         if (webView != null && webView.canGoBack()) {

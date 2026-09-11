@@ -188,10 +188,23 @@
     body.tv .movie-card:focus .card-play { opacity: 1 !important; transform: scale(1) !important; }
     body.tv .movie-card:focus h4 { color: #c084fc !important; }
     /* TV grid: fewer columns, bigger cards */
-    body.tv .tv-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.75rem; }
+    body.tv .tv-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.5rem; }
     body.tv .tv-grid .movie-card { animation: none; }
     body.tv { font-size: 18px; }
-    body.tv .tv-container { max-width: 92rem; }
+    /* Layout TV: đẩy nội dung sang phải để không đè lên sidebar/logo */
+    body.tv header { margin-left: 15rem; }
+    body.tv #heroSection,
+    body.tv #continueSection,
+    body.tv #filterBar,
+    body.tv main {
+      margin-left: 15rem;
+      margin-right: 2.5rem;
+      max-width: none;
+    }
+    body.tv main { padding-bottom: 5rem; }
+    body.tv #pagination { margin-bottom: 3rem; }
+    body.tv .aurora-blob { opacity: 0.25; }
+    body.tv #playerEpBar { display: block !important; }
     /* Sidebar nav (TV) */
     .tv-sidebar-item { border-left: 4px solid transparent; }
     .tv-sidebar-item:focus { border-left-color: #8b5cf6; }
@@ -230,7 +243,7 @@
   </nav>
 
   <!-- ================= HEADER ================= -->
-  <header class="fixed top-0 inset-x-0 z-40 glass safe-top safe-x tv:ml-56">
+  <header class="fixed top-0 inset-x-0 z-40 glass safe-top safe-x">
     <div id="headerInner" class="max-w-7xl mx-auto px-4 lg:px-8 py-3 flex items-center justify-between gap-4">
       <a href="#" onclick="switchTab('home'); return false;" class="flex items-center gap-2.5 text-xl sm:text-2xl font-extrabold tracking-wider group shrink-0 mobile-only">
         <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-500 to-accent-400 flex items-center justify-center shadow-lg shadow-brand-500/30 group-hover:scale-105 transition duration-300">
@@ -254,7 +267,7 @@
   <div class="h-16 sm:h-20"></div>
 
   <!-- ================= HERO ================= -->
-  <div id="heroSection" class="relative max-w-7xl mx-auto px-4 lg:px-8 mt-4 sm:mt-6 hidden tv-container tv:px-12">
+  <div id="heroSection" class="relative max-w-7xl mx-auto px-4 lg:px-8 mt-4 sm:mt-6 hidden">
     <div class="relative h-[22rem] sm:h-[28rem] lg:h-[34rem] rounded-3xl overflow-hidden group border border-white/10 shadow-2xl">
       <img id="heroImg" class="w-full h-full object-cover object-top opacity-60 group-hover:scale-105 transition duration-1000 ease-out" src="" alt="Hero">
       <div class="absolute inset-0 bg-gradient-to-t from-dark-950 via-dark-900/60 to-transparent"></div>
@@ -284,7 +297,7 @@
   </div>
 
   <!-- ================= CONTINUE WATCHING ================= -->
-  <div id="continueSection" class="max-w-7xl mx-auto px-4 lg:px-8 mt-8 hidden tv-container tv:px-12">
+  <div id="continueSection" class="max-w-7xl mx-auto px-4 lg:px-8 mt-8 hidden">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-bold tracking-wide flex items-center gap-2.5">
         <span class="w-1 h-6 bg-gradient-to-b from-brand-400 to-accent-400 rounded-full inline-block"></span>
@@ -296,7 +309,7 @@
   </div>
 
   <!-- ================= FILTER BAR ================= -->
-  <div id="filterBar" class="max-w-7xl mx-auto px-4 lg:px-8 mt-8 tv-container tv:px-12">
+  <div id="filterBar" class="max-w-7xl mx-auto px-4 lg:px-8 mt-8">
     <div class="flex items-center justify-between gap-4 mb-4">
       <div class="flex items-center gap-2">
         <i class="fa-solid fa-sliders text-brand-500"></i>
@@ -377,7 +390,7 @@
   </div>
 
   <!-- ================= MAIN GRID ================= -->
-  <main class="max-w-7xl mx-auto px-4 lg:px-8 mt-8 tv-container tv:px-12">
+  <main class="max-w-7xl mx-auto px-4 lg:px-8 mt-8">
     <div class="flex items-center justify-between mb-6">
       <h2 id="sectionTitle" class="text-lg sm:text-xl font-bold tracking-wide flex items-center gap-2.5">
         <span class="w-1.5 h-6 bg-gradient-to-b from-brand-400 to-accent-400 rounded-full inline-block"></span>
@@ -465,8 +478,12 @@
           <h3 id="playerTitle" class="text-white font-bold text-sm sm:text-base truncate">Tên phim</h3>
           <p id="playerEpName" class="text-slate-400 text-xs truncate">Tập 1</p>
         </div>
+        <span class="tv-only text-[11px] text-slate-500 shrink-0 hidden lg:inline">◀ ▶ đổi tập · Back thoát</span>
       </div>
       <div class="flex items-center gap-2 shrink-0">
+        <button onclick="requestPlayerFullscreen()" title="Toàn màn hình" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10">
+          <i class="fa-solid fa-expand"></i>
+        </button>
         <button onclick="togglePlayerFav()" id="playerFavBtn" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10">
           <i class="fa-regular fa-heart"></i>
         </button>
@@ -538,61 +555,68 @@
     const IS_TV = /Android.*;\s*(TV|Leanback)|SmartTV|AppleTV|GoogleTV|CrKey|Web0S|Tizen\s*TB|BRAVIA|AFT|MiTV|MiBOX/i.test(navigator.userAgent)
       || (window.innerWidth >= 1500 && !('ontouchstart' in window));
     if (IS_TV) document.body.classList.add('tv');
-    // Push main content right for TV sidebar
-    function applyTvLayout() {
-      if (!IS_TV) return;
-      ['headerInner', 'heroSection', 'continueSection', 'filterBar'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.marginLeft = '14rem';
-      });
-      const main = document.querySelector('main');
-      if (main) main.style.marginLeft = '14rem';
-    }
-    applyTvLayout();
+    // Bố cục TV (đẩy nội dung sang phải sidebar) xử lý bằng CSS body.tv — không cần JS
 
     // ==================== SPATIAL (D-PAD) NAVIGATION ====================
+    const playerModalEl = document.getElementById('playerModal');
+    const detailModalEl = document.getElementById('detailModal');
+
+    function activeScope() {
+      if (!playerModalEl.classList.contains('hidden')) return playerModalEl;
+      if (!detailModalEl.classList.contains('hidden')) return detailModalEl;
+      return document;
+    }
     function isFocusable(el) {
       if (!el || el === document.body) return false;
       return el.matches('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex="0"]')
         && el.offsetParent !== null
-        && getComputedStyle(el).visibility !== 'hidden';
+        && el.getClientRects().length > 0;
+    }
+    function queryFocusables(scope) {
+      return Array.from(scope.querySelectorAll(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex="0"]'
+      )).filter(isFocusable);
     }
     function focusFirst() {
-      const modalOpen = !document.getElementById('playerModal').classList.contains('hidden');
-      if (modalOpen) return;
-      const detailOpen = !document.getElementById('detailModal').classList.contains('hidden');
-      const scope = detailOpen ? document.getElementById('detailModal') : document;
-      const first = scope.querySelector('button, a[href], select, input, [tabindex="0"]');
-      if (first) { first.focus(); first.scrollIntoView({ block: 'center' }); }
+      if (!playerModalEl.classList.contains('hidden')) return; // trong trình phát: điều khiển bằng phím tắt
+      const first = queryFocusables(activeScope())[0];
+      if (first) { first.focus({ preventScroll: true }); first.scrollIntoView({ block: 'center' }); }
     }
-    document.addEventListener('keyup', e => {
-      if (!IS_TV) return;
-      // OK/Enter on select opens native list — leave to browser
-      const dirs = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
-      if (!dirs[e.key]) return;
+    const DPAD_DIRS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+    document.addEventListener('keydown', e => {
+      if (!IS_TV || !DPAD_DIRS[e.key]) return;
+      const playerOpen = !playerModalEl.classList.contains('hidden');
+      // Trong trình phát: ← → dành cho đổi tập (xem phần phím tắt)
+      if (playerOpen && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
       const active = document.activeElement;
-      // inside number/year input or select, keep native horizontal behaviour
-      if (active && (active.tagName === 'INPUT' || active.tagName === 'SELECT') && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
-      e.preventDefault();
+      // Ô nhập liệu: giữ mũi tên trái/phải làm con trỏ soạn thảo
+      if (active && active.tagName === 'INPUT' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
+      e.preventDefault(); // chặn cuộn/trỏ gốc của trang — nguyên nhân gây "nhảy kép"
       if (!isFocusable(active)) { focusFirst(); return; }
+      const [ddx, ddy] = DPAD_DIRS[e.key];
       const r = active.getBoundingClientRect();
       const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      const [ddx, ddy] = dirs[e.key];
       let best = null, bestScore = Infinity;
-      document.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex="0"]').forEach(el => {
-        if (el === active || !isFocusable(el)) return;
+      queryFocusables(activeScope()).forEach(el => {
+        if (el === active) return;
         const b = el.getBoundingClientRect();
+        if (b.width === 0 || b.height === 0) return;
         const dx = (b.left + b.width / 2) - cx;
         const dy = (b.top + b.height / 2) - cy;
-        const primary = dx * ddx + dy * ddy;            // distance along direction
-        if (primary <= 6) return;                        // not in that direction
-        const perp = Math.abs(dx * ddy - dy * ddx);      // off-axis distance
-        const score = primary + perp * perp / 90;        // penalise off-axis heavily
+        const primary = dx * ddx + dy * ddy;
+        if (primary <= 4) return;
+        const perp = Math.abs(dx * ddy - dy * ddx);
+        const score = primary + perp * 2.5; // phạt lệch hướng tuyến tính — không nhảy xa oan
         if (score < bestScore) { bestScore = score; best = el; }
       });
       if (best) {
-        best.focus();
-        best.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        best.focus({ preventScroll: true });
+        best.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      } else if (!playerOpen) {
+        // Không có phần tử nào theo hướng đó → cuộn trang
+        const sc = document.scrollingElement;
+        if (e.key === 'ArrowDown') sc.scrollBy({ top: 260 });
+        else if (e.key === 'ArrowUp') sc.scrollBy({ top: -260 });
       }
     });
 
@@ -874,6 +898,7 @@
         try { renderMetaTags(); } catch (e) { console.warn('Meta tags error', e); }
         renderEpisodes();
         try { renderRelated(slug); } catch (e) { console.warn('Related error', e); }
+        if (IS_TV) setTimeout(focusFirst, 150); // TV: đưa focus vào trong modal chi tiết
       } catch (e) {
         showToast('Không thể mở thông tin phim!', 'error');
       }
@@ -953,6 +978,15 @@
     }
 
     // ==================== PLAYER ====================
+    // Fullscreen hoạt động cả trong WebView Android: WebView sẽ gọi onShowCustomView
+    // (MainActivity đã cài) -> video chiếm toàn màn hình + khóa xoay ngang.
+    function requestPlayerFullscreen() {
+      const el = document.getElementById('videoIframe');
+      try {
+        const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+        if (fn) { const p = fn.call(el); if (p && p.catch) p.catch(() => {}); }
+      } catch (err) { /* một số nguồn nhúng chặn fullscreen từ trang gốc */ }
+    }
     function openPlayer(embedUrl, title, epName) {
       const modal = document.getElementById('playerModal');
       const iframe = document.getElementById('videoIframe');
@@ -964,6 +998,7 @@
       document.body.style.overflow = 'hidden';
       updatePlayerNav();
       updatePlayerFavIcon();
+      if (IS_TV) setTimeout(requestPlayerFullscreen, 200); // TV: tự vào toàn màn hình ngay
       if (!IS_TV && window.innerWidth < 640) {
         const hint = document.getElementById('swipeHint');
         hint.style.opacity = '1';
@@ -1149,6 +1184,10 @@
     document.getElementById('fYear').max = currentYear;
     loadHome();
     checkDeepLink();
+    if (IS_TV) setTimeout(() => {
+      const homeBtn = document.querySelector('[data-nav="home"]');
+      if (homeBtn) homeBtn.focus({ preventScroll: true });
+    }, 600);
   </script>
 </body>
 </html>
