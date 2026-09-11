@@ -48,6 +48,8 @@ public class MainActivity extends Activity {
         rootLayout.addView(webView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         setContentView(rootLayout);
+		webView.setFocusableInTouchMode(true);
+		webView.requestFocus();
 
         applyImmersive();
 
@@ -154,7 +156,11 @@ public class MainActivity extends Activity {
                     case KeyEvent.KEYCODE_MEDIA_PLAY:
                     case KeyEvent.KEYCODE_MEDIA_PAUSE:
                         if (event.getRepeatCount() == 0) {
-                            // OK = chạm video + gửi phím Space -> player nhúng tự phát/dừng
+                            if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_CENTER || event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+								forwardKeyToWebView(event.getKeyCode());
+							}
+							
+							// OK = chạm video + gửi phím Space -> player nhúng tự phát/dừng
                             jsKey("ok");
                         }
                         return true;

@@ -191,15 +191,34 @@
     body.tv .tv-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.5rem; }
     body.tv .tv-grid .movie-card { animation: none; }
     body.tv { font-size: 18px; }
-    /* Layout TV: đẩy nội dung sang phải để không đè lên sidebar/logo */
-    body.tv header { margin-left: 15rem; }
+    
+    /* Layout TV: Giao diện thu gọn menu */
+    body.tv nav.tv-only {
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    body.tv.menu-open nav.tv-only {
+      transform: translateX(0);
+    }
+    body.tv header { 
+      margin-left: 2.5rem; 
+      transition: margin-left 0.3s ease; 
+    }
     body.tv #heroSection,
     body.tv #continueSection,
     body.tv #filterBar,
     body.tv main {
-      margin-left: 15rem;
+      margin-left: 2.5rem;
       margin-right: 2.5rem;
       max-width: none;
+      transition: margin-left 0.3s ease;
+    }
+    body.tv.menu-open header,
+    body.tv.menu-open #heroSection,
+    body.tv.menu-open #continueSection,
+    body.tv.menu-open #filterBar,
+    body.tv.menu-open main {
+      margin-left: 15rem;
     }
     body.tv main { padding-bottom: 5rem; }
     body.tv #pagination { margin-bottom: 3rem; }
@@ -605,24 +624,61 @@
       if (best) { best.focus({ preventScroll: true }); best.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
       return !!best;
     }
+    
     const DPAD_DIRS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+    
+    let tvMenuTimeout;
+    function showTvMenu() {
+      if (!IS_TV) return;
+      document.body.classList.add('menu-open');
+      resetTvMenuTimer();
+    }
+    function hideTvMenu() {
+      if (!IS_TV) return;
+      document.body.classList.remove('menu-open');
+      // Trả lại focus cho khu vực lưới phim nếu người dùng đang kẹt trong menu
+      const active = document.activeElement;
+      if (active && active.closest('nav.tv-only')) {
+        focusFirst();
+      }
+    }
+    function resetTvMenuTimer() {
+      clearTimeout(tvMenuTimeout);
+      tvMenuTimeout = setTimeout(hideTvMenu, 5000); // Tự động ẩn sau 5 giây
+    }
+
     document.addEventListener('keydown', e => {
       if (!IS_TV || !DPAD_DIRS[e.key]) return;
+      
       const playerOpen = !playerModalEl.classList.contains('hidden');
-      // Trong trình phát: ← → dành cho đổi tập (xem phần phím tắt)
       if (playerOpen && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
+
+      // --- LOGIC ẨN/HIỆN MENU ---
+      if (document.body.classList.contains('menu-open')) {
+        resetTvMenuTimer(); 
+      }
+      if (e.key === 'ArrowLeft' && !playerOpen) {
+        showTvMenu();
+      } else if (e.key === 'ArrowRight' && document.body.classList.contains('menu-open')) {
+        hideTvMenu();
+        e.preventDefault();
+        return; 
+      }
+      // --- KẾT THÚC LOGIC MENU ---
+
       const active = document.activeElement;
       // Ô nhập liệu: giữ mũi tên trái/phải làm con trỏ soạn thảo
       if (active && active.tagName === 'INPUT' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
-      e.preventDefault(); // chặn cuộn/trỏ gốc của trang — nguyên nhân gây "nhảy kép"
+      e.preventDefault(); // chặn cuộn/trỏ gốc của trang
+      
       if (!isFocusable(active)) { focusFirst(); return; }
       const [ddx, ddy] = DPAD_DIRS[e.key];
       const best = spatialBest(activeScope(), active, ddx, ddy);
+      
       if (!spatialFocus(best) && !playerOpen) {
-        // Không có phần tử nào theo hướng đó → cuộn trang
         const sc = document.scrollingElement;
-        if (e.key === 'ArrowDown') sc.scrollBy({ top: 260 });
-        else if (e.key === 'ArrowUp') sc.scrollBy({ top: -260 });
+        if (e.key === 'ArrowDown') sc.scrollBy({ top: 260, behavior: 'smooth' });
+        else if (e.key === 'ArrowUp') sc.scrollBy({ top: -260, behavior: 'smooth' });
       }
     });
 
