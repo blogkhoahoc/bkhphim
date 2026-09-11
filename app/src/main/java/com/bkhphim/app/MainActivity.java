@@ -4,11 +4,14 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -20,6 +23,9 @@ public class MainActivity extends Activity {
     private WebView webView;
     private FrameLayout rootLayout;
     private FullscreenChromeClient chromeClient;
+
+    // true khi màn trình phát đang mở (do trang web báo qua TvBridge)
+    private volatile boolean playerOpen = false;
 
     // Fullscreen video (custom view) state
     private View customView;
@@ -51,6 +57,7 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient());
         chromeClient = new FullscreenChromeClient();
         webView.setWebChromeClient(chromeClient);
+        webView.addJavascriptInterface(new TvBridge(), "TvBridge");
         webView.loadUrl("file:///android_asset/index.html");
     }
 
@@ -65,8 +72,70 @@ public class MainActivity extends Activity {
     }
 
     /**
+     * Cầu nối JS -> Android. Trang web gọi TvBridge.setPlayerOpen(true/false)
+     * khi mở/đóng màn trình phát để Activity biết lúc nào cần điều khiển remote.
+     */
+    private class TvBridge {
+        @JavascriptInterface
+        public void setPlayerOpen(boolean open) {
+            playerOpen = open;
+        }
+    }
+
+    /**
+     * Khi trình phát đang mở, chặn phím remote TẠI ĐÂY thay vì để WebView đưa
+     * xuống iframe (trình phát nhúng bên thứ ba sẽ nuốt mất phím và app không
+     * còn cách nào điều khiển):
+     *   OK            = phát/dừng  (giả lập cú chạm giữa màn hình video)
+     *   DPAD_UP       = bật/tắt toàn màn hình
+     *   DPAD_LEFT/RIGHT = tập trước / tập sau
+     */
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (playerOpen && event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+            switch (event.getKeyCode()) {
+                case KeyEvent.KEYCODE_DPAD_CENTER:
+                case KeyEvent.KEYCODE_ENTER:
+                case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+                case KeyEvent.KEYCODE_MEDIA_PLAY:
+                case KeyEvent.KEYCODE_MEDIA_PAUSE:
+                    tapCenter();
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_UP:
+                    jsKey("up");
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                    jsKey("left");
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
+                    jsKey("right");
+                    return true;
+            }
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    private void jsKey(String key) {
+        webView.evaluateJavascript("window.tvKey && window.tvKey('" + key + "')", null);
+    }
+
+    /** Giả lập cú chạm giữa màn hình — chủ yếu để phát/dừng video trong iframe */
+    private void tapCenter() {
+        View decor = getWindow().getDecorView();
+        long now = SystemClock.uptimeMillis();
+        float x = decor.getWidth() / 2f;
+        float y = decor.getHeight() / 2f;
+        MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, x, y, 0);
+        decor.dispatchTouchEvent(down);
+        MotionEvent up = MotionEvent.obtain(now, now + 80, MotionEvent.ACTION_UP, x, y, 0);
+        decor.dispatchTouchEvent(up);
+        down.recycle();
+        up.recycle();
+    }
+
+    /**
      * WebChromeClient xử lý nút fullscreen của trình phát video trong iframe.
-     * Khi video yêu cầu fullscreen, Android hiển thị custom view toàn màn hình
+     * Khi video/iframe yêu cầu fullscreen, Android hiển thị custom view toàn màn hình
      * và khóa xoay ngang; thoát fullscreen thì trả lại giao diện app như cũ.
      */
     private class FullscreenChromeClient extends WebChromeClient {
@@ -117,7 +186,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    // Phím Back trên remote/điện thoại: thoát fullscreen -> quay lại trong WebView -> thoát app
+    // Phím Back: thoát fullscreen -> quay lại trong WebView -> thoát app
     @Override
     public void onBackPressed() {
         if (customView != null) {               // đang fullscreen video -> thoát fullscreen trước

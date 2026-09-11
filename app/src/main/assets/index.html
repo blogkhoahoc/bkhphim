@@ -236,9 +236,9 @@
     <button onclick="switchTab('history')" class="tv-sidebar-item focusable flex items-center gap-4 px-4 py-4 rounded-2xl text-lg font-bold text-slate-400" data-nav="history">
       <i class="fa-solid fa-clock-rotate-left w-6 text-center text-xl"></i> Lịch Sử
     </button>
-    <div class="mt-auto px-2 text-xs text-slate-600 leading-relaxed tv-only">
+    <div class="mt-auto px-2 text-xs text-slate-500 leading-relaxed tv-only">
       <p class="flex items-center gap-2 mb-1"><i class="fa-solid fa-circle-info text-brand-500"></i> Dùng remote để điều hướng</p>
-      <p class="pl-6">◀ ▶ đổi tập khi xem phim</p>
+      <p class="pl-6">Khi xem phim: OK phát/dừng · ▲ toàn màn hình · ◀ ▶ đổi tập</p>
     </div>
   </nav>
 
@@ -478,7 +478,7 @@
           <h3 id="playerTitle" class="text-white font-bold text-sm sm:text-base truncate">Tên phim</h3>
           <p id="playerEpName" class="text-slate-400 text-xs truncate">Tập 1</p>
         </div>
-        <span class="tv-only text-[11px] text-slate-500 shrink-0 hidden lg:inline">◀ ▶ đổi tập · Back thoát</span>
+        <span class="tv-only text-[11px] text-slate-500 shrink-0 hidden lg:inline">OK phát/dừng · ▲ toàn màn hình · ◀ ▶ đổi tập · Back thoát</span>
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <button onclick="requestPlayerFullscreen()" title="Toàn màn hình" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10">
@@ -987,6 +987,23 @@
         if (fn) { const p = fn.call(el); if (p && p.catch) p.catch(() => {}); }
       } catch (err) { /* một số nguồn nhúng chặn fullscreen từ trang gốc */ }
     }
+    // Điều khiển từ remote trên TV: MainActivity chặn phím (vì iframe nuốt phím)
+    // rồi gọi lại vào đây. ◀ ▶ đổi tập, ▲ bật/tắt toàn màn hình.
+    function toggleTvFullscreen() {
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if (fsEl) {
+        const fn = document.exitFullscreen || document.webkitExitFullscreen;
+        if (fn) fn.call(document);
+      } else {
+        requestPlayerFullscreen();
+      }
+    }
+    window.tvKey = function (k) {
+      if (k === 'left') prevEpisode();
+      else if (k === 'right') nextEpisode();
+      else if (k === 'up') toggleTvFullscreen();
+    };
+
     function openPlayer(embedUrl, title, epName) {
       const modal = document.getElementById('playerModal');
       const iframe = document.getElementById('videoIframe');
@@ -998,6 +1015,8 @@
       document.body.style.overflow = 'hidden';
       updatePlayerNav();
       updatePlayerFavIcon();
+      // Báo Android: đang ở màn trình phát -> Activity sẽ chặn & xử lý phím remote
+      if (window.TvBridge) { try { TvBridge.setPlayerOpen(IS_TV); } catch (e) {} }
       if (IS_TV) setTimeout(requestPlayerFullscreen, 200); // TV: tự vào toàn màn hình ngay
       if (!IS_TV && window.innerWidth < 640) {
         const hint = document.getElementById('swipeHint');
@@ -1011,6 +1030,7 @@
       iframe.src = '';
       modal.classList.add('hidden');
       modal.classList.remove('flex');
+      if (window.TvBridge) { try { TvBridge.setPlayerOpen(false); } catch (e) {} }
       if (!document.getElementById('detailModal').classList.contains('hidden')) {
         document.body.style.overflow = 'hidden';
       } else {
