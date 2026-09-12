@@ -105,9 +105,7 @@ public class MainActivity extends Activity {
                 else if ("ArrowUp".equals(code)) kc = KeyEvent.KEYCODE_DPAD_UP;
                 else if ("ArrowDown".equals(code)) kc = KeyEvent.KEYCODE_DPAD_DOWN;
                 else return;
-                long now = SystemClock.uptimeMillis();
-                webView.dispatchKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, kc, 0));
-                webView.dispatchKeyEvent(new KeyEvent(now, now + 40, KeyEvent.ACTION_UP, kc, 0));
+                forwardKeyToPlayer(kc);
             });
         }
     }
@@ -115,9 +113,7 @@ public class MainActivity extends Activity {
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (playerOpen) {
-            boolean nativeVideoFs = customView != null && isNativeVideoFullscreen(customView);
-
-            // 1. Phím OK / Enter cho CẢ 2 chế độ (Nhả để Tạm dừng, Giữ để Xóa QC)
+            // Phím OK / Enter (Xử lý Play/Pause hoặc Bấm giữ xóa Quảng cáo)
             if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_CENTER || 
                 event.getKeyCode() == KeyEvent.KEYCODE_ENTER || 
                 event.getKeyCode() == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
@@ -135,11 +131,7 @@ public class MainActivity extends Activity {
                     }
                 } else if (event.getAction() == KeyEvent.ACTION_UP) {
                     if (isOkPressed && !okLongPressExecuted) {
-                        if (nativeVideoFs) {
-                            toggleNativeVideoPlayPause();
-                        } else {
-                            jsKey("ok"); 
-                        }
+                        jsKey("ok"); // Gọi qua JS để nó tự tìm view hiện tại Play/Pause
                     }
                     isOkPressed = false;
                     okLongPressExecuted = false;
@@ -147,34 +139,25 @@ public class MainActivity extends Activity {
                 return true;
             }
 
-            // 2. Các phím điều hướng (Tua, Đổi màn hình)
+            // Các phím điều hướng (Tua, Đổi màn hình)
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
                 switch (event.getKeyCode()) {
                     case KeyEvent.KEYCODE_DPAD_UP:
-                        if (event.getRepeatCount() == 0) {
-                            jsKey("up");
-                        }
+                        if (event.getRepeatCount() == 0) jsKey("up");
                         return true;
                     case KeyEvent.KEYCODE_DPAD_DOWN:
-                        if (event.getRepeatCount() == 0) {
-                            jsKey("down");
-                        }
+                        if (event.getRepeatCount() == 0) jsKey("down");
                         return true;
                     case KeyEvent.KEYCODE_DPAD_LEFT:
                     case KeyEvent.KEYCODE_DPAD_RIGHT:
-                        if (nativeVideoFs) {
-                            // Bàn giao hoàn toàn Tua Trái/Phải cho Android Native MediaController ở chế độ Fullscreen
-                            return super.dispatchKeyEvent(event);
-                        } else {
-                            if (event.getRepeatCount() == 0) {
-                                episodeGestureDone = false;
-                                forwardKeyToWebView(event.getKeyCode()); // Tua ở Web
-                            } else if (!episodeGestureDone && event.getRepeatCount() >= 2) {
-                                episodeGestureDone = true;
-                                jsKey(event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT ? "epprev" : "epnext");
-                            }
-                            return true;
+                        if (event.getRepeatCount() == 0) {
+                            episodeGestureDone = false;
+                            forwardKeyToPlayer(event.getKeyCode()); // Tua video
+                        } else if (!episodeGestureDone && event.getRepeatCount() >= 2) {
+                            episodeGestureDone = true;
+                            jsKey(event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT ? "epprev" : "epnext");
                         }
+                        return true;
                 }
             }
         }
@@ -182,81 +165,56 @@ public class MainActivity extends Activity {
     }
 
     private void autoClickAds() {
-        View decor = getWindow().getDecorView();
-        int w = decor.getWidth();
-        int h = decor.getHeight();
+        // Tự động tìm View đang hiển thị (Web nhỏ hoặc Cửa sổ toàn màn hình)
+        View target = customView != null ? customView : getWindow().getDecorView();
+        int w = target.getWidth();
+        int h = target.getHeight();
 
-        tap(decor, w * 0.66f, h * 0.65f);
-        decor.postDelayed(() -> tap(decor, w * 0.85f, h * 0.85f), 100);
-        decor.postDelayed(() -> tap(decor, w * 0.40f, h * 0.65f), 200);
+        tap(target, w * 0.66f, h * 0.65f); // Đóng thông báo
+        target.postDelayed(() -> tap(target, w * 0.85f, h * 0.85f), 100); // Skip Ad
+        target.postDelayed(() -> tap(target, w * 0.40f, h * 0.65f), 200); // Trình phát dự phòng
 
-        // BẮT BUỘC KHÔI PHỤC FOCUS SAU KHI CHẠM ẢO ĐỂ KHÔNG BỊ LIỆT PHÍM
-        decor.postDelayed(() -> {
-            if (customView != null) {
-                customView.requestFocus();
-            } else {
-                webView.requestFocus();
+        // Khôi phục Focus
+        target.postDelayed(() -> {
+            target.requestFocus();
+            if (customView == null) {
                 webView.evaluateJavascript("if(window.tvFocusOurPage) window.tvFocusOurPage();", null);
             }
         }, 300);
     }
 
-    private boolean isNativeVideoFullscreen(View v) {
-        if (v instanceof android.view.SurfaceView || v instanceof android.view.TextureView) return true;
-        if (v instanceof ViewGroup) {
-            ViewGroup g = (ViewGroup) v;
-            for (int i = 0; i < g.getChildCount(); i++) {
-                if (isNativeVideoFullscreen(g.getChildAt(i))) return true;
-            }
-        }
-        return false;
+    private void tapCenter() {
+        View target = customView != null ? customView : webView;
+        tap(target, target.getWidth() / 2f, target.getHeight() / 2f);
     }
 
-    private void toggleNativeVideoPlayPause() {
-        View decor = getWindow().getDecorView();
-        float bx = dp(34);
-        float by = decor.getHeight() - dp(26);
-        if (!mediaControllerVisible) {
-            tap(decor, bx, by);
-            decor.postDelayed(() -> tap(decor, bx, by), 350);
-            mediaControllerVisible = true;
-        } else {
-            tap(decor, bx, by);
-        }
-        
-        // Khôi phục Focus cho video toàn màn hình sau khi chạm Play/Pause
-        if (customView != null) {
-            decor.postDelayed(() -> customView.requestFocus(), 400);
-        }
-    }
-
-    private void tap(View decor, float x, float y) {
+    private void tap(View view, float x, float y) {
         long now = SystemClock.uptimeMillis();
         MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, x, y, 0);
-        decor.dispatchTouchEvent(down);
+        view.dispatchTouchEvent(down);
         MotionEvent up = MotionEvent.obtain(now, now + 60, MotionEvent.ACTION_UP, x, y, 0);
-        decor.dispatchTouchEvent(up);
+        view.dispatchTouchEvent(up);
         down.recycle();
         up.recycle();
-    }
-
-    private float dp(int v) {
-        return v * getResources().getDisplayMetrics().density;
     }
 
     private void jsKey(String key) {
         webView.evaluateJavascript("window.tvKey && window.tvKey('" + key + "')", null);
     }
 
-    private void forwardKeyToWebView(int code) {
+    private void forwardKeyToPlayer(int code) {
         long now = SystemClock.uptimeMillis();
-        webView.dispatchKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, code, 0));
-        webView.dispatchKeyEvent(new KeyEvent(now, now + 40, KeyEvent.ACTION_UP, code, 0));
-    }
-
-    private void tapCenter() {
-        View decor = getWindow().getDecorView();
-        tap(decor, decor.getWidth() / 2f, decor.getHeight() / 2f);
+        KeyEvent down = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, code, 0);
+        KeyEvent up = new KeyEvent(now, now + 40, KeyEvent.ACTION_UP, code, 0);
+        
+        // Bắn phím điều khiển vào trực tiếp trình phát Video đang nổi trên cùng
+        if (customView != null) {
+            customView.dispatchKeyEvent(down);
+            customView.dispatchKeyEvent(up);
+        } else {
+            webView.dispatchKeyEvent(down);
+            webView.dispatchKeyEvent(up);
+        }
     }
 
     private class FullscreenChromeClient extends WebChromeClient {
@@ -279,8 +237,7 @@ public class MainActivity extends Activity {
             setContentView(fullscreenContainer);
             applyImmersive();
             
-            // Ép Focus vào video khi hiển thị toàn màn hình
-            view.requestFocus();
+            view.requestFocus(); // Ép hệ thống nhắm Focus vào Video Fullscreen
 
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -297,8 +254,7 @@ public class MainActivity extends Activity {
             setContentView(rootLayout);
             applyImmersive();
             
-            // Trả Focus về Web khi thu nhỏ
-            webView.requestFocus();
+            webView.requestFocus(); // Trả Focus lại cho Web
 
             customView = null;
             mediaControllerVisible = false;
